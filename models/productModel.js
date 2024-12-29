@@ -15,7 +15,7 @@ const productSchema = new Schema({
     price: { type: Number, required: true }, // Changed to Number for calculations
     description: { type: String, required: true },
     image: { type: String, required: true },
-    stock: { type: Number, required: true },
+    stock: { type: Number, required: true, default: 0 },
     reviews: [reviewSchema], // Embedded review schema
     averageRating: { type: Number, default: 0 }, // For displaying the average rating of the product
     numReviews: { type: Number, default: 0 } // Count of total reviews

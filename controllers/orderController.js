@@ -1,7 +1,7 @@
 import asyncHandler from "express-async-handler";
-import { Order } from "../models/orderModel";
-import { Product } from "../models/productModel";
-import HttpError from "../utils/handleError"; // Custom error utility
+import { Order } from "../models/orderModel.js";
+import { Product } from "../models/productModel.js";
+import {HttpError} from "../utils/handleError.js"; // Custom error utility
 
 export const placeOrder = asyncHandler(async (req, res, next) => {
     const { orderItems, shippingAddress, paymentMethod } = req.body;
@@ -33,7 +33,7 @@ export const placeOrder = asyncHandler(async (req, res, next) => {
 
     // Create the order
     const order = new Order({
-        user: req.user._id, // Assumes the user is authenticated
+        user: req.user.id,
         orderItems,
         shippingAddress,
         paymentMethod,

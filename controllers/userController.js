@@ -1,7 +1,7 @@
-import generateToken from "../Utils/generateToken";
+import {generateToken} from "../Utils/generateToken.js";
 import asyncHandler from "express-async-handler";
-import User from "../models/userModel";
-import HttpError from "../utils/handleError"; // Custom error utility
+import {User} from "../models/userModel.js";
+// import HttpError from "../utils/handleError.js"; // Custom error utility
 
 // Register a new user
 export const registerUser = asyncHandler(async (req, res) => {
@@ -28,19 +28,18 @@ export const registerUser = asyncHandler(async (req, res) => {
         password, // Password will be hashed in userModel pre-save hook
     });
 
+
     // Assign admin role if email matches
     if (user.email === process.env.ADMIN_EMAIL) {
         user.isAdmin = true;
         await user.save(); // Save changes to the user
     }
-
     if (user) {
         res.status(201).json({
             _id: user._id,
             name: user.name,
             email: user.email,
             isAdmin: user.isAdmin,
-            token: generateToken(user._id, user.isAdmin),
         });
     } else {
         res.status(400);
@@ -54,6 +53,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
     // Check if user exists
     const user = await User.findOne({ email: email.toLowerCase() });
+    const token = await generateToken({id: user._id, isAdmin: user.isAdmin})
 
     if (user && (await user.matchPassword(password))) { // Use matchPassword from userModel
         res.json({
@@ -61,7 +61,7 @@ export const loginUser = asyncHandler(async (req, res) => {
             name: user.name,
             email: user.email,
             isAdmin: user.isAdmin,
-            token: generateToken(user._id, user.isAdmin),
+            token
         });
     } else {
         res.status(401);

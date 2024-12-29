@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 
 import bcrypt from "bcryptjs"
+import { HttpError } from "../utils/handleError.js";
 
 const cartItemSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
@@ -24,6 +25,9 @@ userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
+userSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
 
 //Export the model
 export const User = mongoose.model('User', userSchema);

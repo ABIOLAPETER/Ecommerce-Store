@@ -1,11 +1,11 @@
 import asyncHandler from "express-async-handler";
-import User from "../models/userModel";
-import Product from "../models/productModel";
-import HttpError from "../utils/handleError"; // Custom error utility
+import {User} from "../models/userModel.js";
+import {Product} from "../models/productModel.js";
+import {HttpError} from "../utils/handleError.js"; // Custom error utility
 
 export const addToCart = asyncHandler(async (req, res, next) => {
     const { productId, quantity } = req.body;
-    const userId = req.user._id; // Assuming authentication middleware adds the `user` object to `req`
+    const userId = req.user.id;
 
     // Validate product
     const product = await Product.findById(productId);
@@ -34,9 +34,8 @@ export const addToCart = asyncHandler(async (req, res, next) => {
 
 
 
-
 export const viewCart = asyncHandler(async (req, res, next) => {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const user = await User.findById(userId).populate("cart.productId", "productName price image");
     if (!user) {
@@ -50,7 +49,7 @@ export const viewCart = asyncHandler(async (req, res, next) => {
 
 export const updateCartItem = asyncHandler(async (req, res, next) => {
     const { productId, quantity } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -75,16 +74,36 @@ export const updateCartItem = asyncHandler(async (req, res, next) => {
 
 
 
+
 export const removeCartItem = asyncHandler(async (req, res, next) => {
-    const { productId } = req.body;
-    const userId = req.user._id;
+    const { productId } = req.params;
+    const userId = req.user.id;
+
+    // Validate productId
+    if (!productId) {
+        return next(new HttpError("Product ID is required", 400));
+    }
 
     const user = await User.findById(userId);
     if (!user) {
         return next(new HttpError("User not found", 404));
     }
 
-    user.cart = user.cart.filter(item => item.productId.toString() !== productId);
+    // Check if the cart is empty
+    if (!user.cart || user.cart.length === 0) {
+        return next(new HttpError("Your cart is empty", 400));
+    }
+
+    // Filter out the item to be removed
+    const updatedCart = user.cart.filter(item => item.productId.toString() !== productId);
+
+    if (updatedCart.length === user.cart.length) {
+        // If the item is not found in the cart
+        return next(new HttpError("Product not found in cart", 404));
+    }
+
+    // Update the user's cart
+    user.cart = updatedCart;
 
     await user.save();
     res.status(200).json({ message: "Item removed from cart", cart: user.cart });
@@ -94,8 +113,8 @@ export const removeCartItem = asyncHandler(async (req, res, next) => {
 
 
 export const clearCart = asyncHandler(async (req, res, next) => {
-    const userId = req.user._id;
-
+    const userId = req.user.id;
+    const {cartId} = req.body
     const user = await User.findById(userId);
     if (!user) {
         return next(new HttpError("User not found", 404));
